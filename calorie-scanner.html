@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<title>Calorie Scanner</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  :root{
+    --green:#3B6D11;--green2:#639922;--green3:#EAF3DE;--green4:#C0DD97;
+    --amber:#BA7517;--amber2:#EF9F27;--amber3:#FAEEDA;--amber4:#FAC775;
+    --coral:#D85A30;--coral3:#FAECE7;
+    --gray:#F1EFE8;--gray2:#D3D1C7;--gray3:#444441;--gray4:#2C2C2A;
+    --white:#ffffff;--text:#1a1a18;--muted:#6b6b66;
+  }
+  html,body{min-height:100vh;background:var(--gray);font-family:'DM Sans',sans-serif;color:var(--text)}
+
+  .app{max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;background:var(--white)}
+
+  /* HEADER */
+  .header{background:var(--green3);border-bottom:1.5px solid var(--green4);padding:20px 20px 16px;display:flex;align-items:center;gap:12px}
+  .header-icon{width:46px;height:46px;background:var(--green);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+  .header-text h1{font-family:'Syne',sans-serif;font-size:20px;color:var(--gray4);font-weight:700}
+  .header-text p{font-size:12px;color:var(--green);font-weight:500;margin-top:2px}
+
+  /* MAIN CONTENT */
+  .content{flex:1;padding:20px 16px;display:flex;flex-direction:column;gap:14px}
+
+  /* UPLOAD ZONE */
+  .upload-zone{border:2.5px dashed var(--green4);border-radius:20px;background:var(--green3);overflow:hidden;cursor:pointer;transition:border-color 0.2s,background 0.2s;position:relative;min-height:200px;display:flex;align-items:center;justify-content:center}
+  .upload-zone:active{background:#d0e8a0}
+  .upload-zone.has-img{border-style:solid;border-color:var(--green2);background:transparent;min-height:0}
+  .upload-prompt{text-align:center;padding:32px 20px;pointer-events:none}
+  .upload-prompt .u-icon{font-size:40px;margin-bottom:10px}
+  .upload-prompt h3{font-family:'Syne',sans-serif;font-size:16px;color:var(--gray4);font-weight:600}
+  .upload-prompt p{font-size:13px;color:var(--green);margin-top:5px}
+  #preview{width:100%;max-height:280px;object-fit:cover;display:none;border-radius:17px}
+  #file-input{display:none}
+
+  /* BUTTONS */
+  .btn-row{display:flex;gap:10px}
+  .btn{flex:1;padding:14px 10px;border:none;border-radius:14px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:opacity 0.15s,transform 0.1s}
+  .btn:active{transform:scale(0.97)}
+  .btn-green{background:var(--green);color:#fff}
+  .btn-green:active{background:var(--green2)}
+  .btn-amber{background:var(--amber);color:#fff}
+  .btn-amber:active{background:var(--amber2)}
+  .btn-amber:disabled{opacity:0.35;cursor:not-allowed;transform:none}
+  .btn-ghost{background:var(--gray);color:var(--gray3);border:1px solid var(--gray2)}
+
+  /* STATUS */
+  .status-box{border-radius:12px;padding:12px 14px;font-size:13px;display:none;align-items:center;gap:10px;line-height:1.4}
+  .status-box.show{display:flex}
+  .status-loading{background:var(--amber3);color:var(--amber)}
+  .status-error{background:#FCEBEB;color:#A32D2D}
+  .spinner{width:18px;height:18px;border:2.5px solid transparent;border-top-color:currentColor;border-radius:50%;animation:spin 0.75s linear infinite;flex-shrink:0}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* RESULTS */
+  .results{display:none;flex-direction:column;gap:12px;animation:fadeUp 0.4s ease}
+  .results.show{display:flex}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+  .cal-hero{background:var(--green);border-radius:18px;padding:20px;color:#fff;text-align:center}
+  .cal-hero .ch-label{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;opacity:0.75;font-weight:500}
+  .cal-hero .ch-num{font-family:'Syne',sans-serif;font-size:58px;font-weight:700;line-height:1;margin:6px 0 2px}
+  .cal-hero .ch-unit{font-size:14px;opacity:0.8}
+  .cal-hero .ch-dish{font-size:15px;margin-top:10px;opacity:0.9;font-weight:500;padding:0 10px}
+
+  .macros{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .macro{background:var(--gray);border-radius:14px;padding:12px 8px;text-align:center}
+  .macro .m-emoji{font-size:20px;margin-bottom:5px}
+  .macro .m-num{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;color:var(--gray4)}
+  .macro .m-label{font-size:11px;color:var(--muted);margin-top:3px}
+
+  .card{background:var(--white);border:1px solid #e5e3db;border-radius:16px;padding:14px 16px}
+  .card-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:600;color:var(--gray4);margin-bottom:10px}
+  .ing-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f0ede5}
+  .ing-row:last-child{border-bottom:none;padding-bottom:0}
+  .ing-name{font-size:13px;color:var(--text)}
+  .ing-cal{background:var(--amber3);color:var(--amber);font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;white-space:nowrap}
+
+  .tip{background:var(--coral3);border-radius:14px;padding:13px 14px;font-size:13px;color:var(--coral);line-height:1.6}
+  .tip strong{font-weight:600}
+
+  .disclaimer{font-size:11px;color:var(--muted);text-align:center;padding:0 10px;line-height:1.5}
+
+  /* BOTTOM SAFE AREA */
+  .safe{height:env(safe-area-inset-bottom,20px);min-height:20px}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="header-icon">🥗</div>
+    <div class="header-text">
+      <h1>Calorie Scanner</h1>
+      <p>AI-powered food nutrition analysis</p>
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- Upload -->
+    <div class="upload-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+      <div class="upload-prompt" id="upload-prompt">
+        <div class="u-icon">📸</div>
+        <h3>Tap to photograph your food</h3>
+        <p>Or choose from your gallery</p>
+      </div>
+      <img id="preview" alt="Food photo preview"/>
+    </div>
+    <input type="file" id="file-input" accept="image/*" capture="environment"/>
+
+    <!-- Buttons -->
+    <div class="btn-row">
+      <button class="btn btn-green" onclick="document.getElementById('file-input').click()">
+        📷 Camera
+      </button>
+      <button class="btn btn-amber" id="analyze-btn" disabled onclick="analyzeFood()">
+        ✨ Analyze
+      </button>
+    </div>
+
+    <!-- Status -->
+    <div class="status-box status-loading" id="status-box">
+      <div class="spinner"></div>
+      <span id="status-text">Analyzing your food with AI...</span>
+    </div>
+
+    <!-- Results -->
+    <div class="results" id="results">
+      <div class="cal-hero">
+        <div class="ch-label">Total Calories</div>
+        <div class="ch-num" id="r-cal">—</div>
+        <div class="ch-unit">kcal per serving</div>
+        <div class="ch-dish" id="r-dish"></div>
+      </div>
+
+      <div class="macros">
+        <div class="macro"><div class="m-emoji">🥩</div><div class="m-num" id="r-protein">—</div><div class="m-label">Protein (g)</div></div>
+        <div class="macro"><div class="m-emoji">🍞</div><div class="m-num" id="r-carbs">—</div><div class="m-label">Carbs (g)</div></div>
+        <div class="macro"><div class="m-emoji">🫒</div><div class="m-num" id="r-fat">—</div><div class="m-label">Fat (g)</div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🧾 Ingredient breakdown</div>
+        <div id="r-ingredients"></div>
+      </div>
+
+      <div class="tip" id="r-tip"></div>
+
+      <div class="disclaimer">⚠️ Calorie estimates are approximate and based on visual analysis. Actual values may vary by portion size and preparation method.</div>
+
+      <button class="btn btn-ghost" onclick="resetApp()">📸 Scan another food</button>
+    </div>
+
+    <div class="safe"></div>
+  </div>
+</div>
+
+<script>
+let imageBase64 = null;
+let imageMime = 'image/jpeg';
+
+document.getElementById('file-input').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  imageMime = file.type || 'image/jpeg';
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    imageBase64 = ev.target.result.split(',')[1];
+    const preview = document.getElementById('preview');
+    preview.src = ev.target.result;
+    preview.style.display = 'block';
+    document.getElementById('upload-prompt').style.display = 'none';
+    document.getElementById('drop-zone').classList.add('has-img');
+    document.getElementById('analyze-btn').disabled = false;
+    hideResults();
+    hideStatus();
+  };
+  reader.readAsDataURL(file);
+});
+
+function hideResults() {
+  document.getElementById('results').classList.remove('show');
+}
+function hideStatus() {
+  document.getElementById('status-box').classList.remove('show');
+}
+function showStatus(msg, type) {
+  const box = document.getElementById('status-box');
+  box.className = 'status-box show ' + (type === 'error' ? 'status-error' : 'status-loading');
+  document.getElementById('status-text').textContent = msg;
+}
+
+async function analyzeFood() {
+  if (!imageBase64) return;
+  document.getElementById('analyze-btn').disabled = true;
+  hideResults();
+  showStatus('Analyzing your food with AI…', 'loading');
+
+  const prompt = `You are a professional nutritionist. Look at this food image carefully and respond ONLY with a JSON object — no markdown fences, no extra text, just the raw JSON.
+
+Use this exact structure:
+{
+  "dish": "Name of the food or dish",
+  "totalCalories": 450,
+  "protein": 22,
+  "carbs": 55,
+  "fat": 14,
+  "ingredients": [
+    {"name": "Rice", "calories": 200},
+    {"name": "Chicken breast", "calories": 165},
+    {"name": "Vegetables", "calories": 45}
+  ],
+  "tip": "A short practical nutrition tip about this meal in 1-2 sentences."
+}
+
+Estimate for the typical serving size visible. If you cannot identify food clearly, use dish: "Unidentified food" and estimate 0 for all numbers.`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'image', source: { type: 'base64', media_type: imageMime, data: imageBase64 } },
+            { type: 'text', text: prompt }
+          ]
+        }]
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error?.message || 'API error');
+    }
+
+    const data = await res.json();
+    const rawText = data.content.map(b => b.text || '').join('');
+    const cleaned = rawText.replace(/```json|```/g, '').trim();
+    const d = JSON.parse(cleaned);
+
+    document.getElementById('r-cal').textContent = Math.round(d.totalCalories || 0);
+    document.getElementById('r-dish').textContent = d.dish || '';
+    document.getElementById('r-protein').textContent = Math.round(d.protein || 0);
+    document.getElementById('r-carbs').textContent = Math.round(d.carbs || 0);
+    document.getElementById('r-fat').textContent = Math.round(d.fat || 0);
+
+    const ingContainer = document.getElementById('r-ingredients');
+    ingContainer.innerHTML = '';
+    (d.ingredients || []).forEach(ing => {
+      const row = document.createElement('div');
+      row.className = 'ing-row';
+      row.innerHTML = `<span class="ing-name">${ing.name}</span><span class="ing-cal">${Math.round(ing.calories)} kcal</span>`;
+      ingContainer.appendChild(row);
+    });
+
+    document.getElementById('r-tip').innerHTML = `<strong>💡 Tip:</strong> ${d.tip || ''}`;
+
+    hideStatus();
+    document.getElementById('results').classList.add('show');
+  } catch (err) {
+    showStatus('Could not analyze image. Please try again.', 'error');
+    console.error(err);
+  }
+
+  document.getElementById('analyze-btn').disabled = false;
+}
+
+function resetApp() {
+  imageBase64 = null;
+  document.getElementById('preview').style.display = 'none';
+  document.getElementById('upload-prompt').style.display = 'block';
+  document.getElementById('drop-zone').classList.remove('has-img');
+  document.getElementById('analyze-btn').disabled = true;
+  document.getElementById('file-input').value = '';
+  hideResults();
+  hideStatus();
+}
+</script>
+</body>
+</html>
